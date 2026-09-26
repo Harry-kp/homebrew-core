@@ -2,11 +2,9 @@ class Julia < Formula
   desc "Fast, Dynamic Programming Language"
   homepage "https://julialang.org/"
   # Use the `-full` tarball to avoid having to download during the build.
-  # TODO: Remove from eol_date_blocklist when bumping to next release
-  url "https://github.com/JuliaLang/julia/releases/download/v1.12.7/julia-1.12.7-full.tar.gz"
-  sha256 "5c7d85b771de3185eeca9fbc2e6173d8bcf6d74f68418622a9e9c43ad752af51"
+  url "https://github.com/JuliaLang/julia/releases/download/v1.13.1/julia-1.13.1-full.tar.gz"
+  sha256 "1c2006bced7a1f8b6c92598ef65b7b24fc74aeaadc53535a45e4c6197001057c"
   license all_of: ["MIT", "BSD-3-Clause", "Apache-2.0", "BSL-1.0"]
-  revision 1
   head "https://github.com/JuliaLang/julia.git", branch: "master"
 
   # Upstream creates GitHub releases for both stable and LTS versions, so the
@@ -66,8 +64,11 @@ class Julia < Formula
   end
 
   def install
+    # Avoid build failure for LLVM benchmarks when building with GCC
+    inreplace "deps/llvm.mk", /-DLLVM_ENABLE_LIBEDIT=OFF$/, "\\0 -DLLVM_INCLUDE_BENCHMARKS=OFF"
+
     # Build documentation available at
-    # https://github.com/JuliaLang/julia/blob/v#{version}/doc/build/build.md
+    # https://github.com/JuliaLang/julia/blob/v#{version}/doc/src/devdocs/build/build.md
     args = %W[
       prefix=#{prefix}
       sysconfdir=#{etc}
@@ -124,7 +125,7 @@ class Julia < Formula
                           thunderx2t99
                           carmel,clone_all
                           apple-m1,base(3)
-                          neoverse-512tvb,base(3)]
+                          neoverse-512tvb,-rand,-fpac,base(3)]
       end
     end
     if Hardware::CPU.intel?
@@ -135,7 +136,7 @@ class Julia < Formula
     args << "JULIA_CPU_TARGET=#{cpu_targets.join(";")}"
 
     # Parallel sysimage shards each hold a full copy of the module, which runs the builder out of memory
-    ENV["JULIA_IMAGE_THREADS"] = "1" if OS.linux? && Hardware::CPU.arm?
+    ENV["JULIA_CPU_THREADS"] = "1" if OS.linux? && Hardware::CPU.arm? && ENV["HOMEBREW_GITHUB_HOSTED_RUNNER"]
 
     gcclibdir = formula_opt_lib("gcc")/"gcc/current"
     ENV.append "LDFLAGS", "-Wl,-rpath,#{lib}/julia"
