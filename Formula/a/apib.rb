@@ -36,7 +36,7 @@ class Apib < Formula
 
   depends_on "cmake" => :build
   depends_on "libev"
-  depends_on "openssl@3"
+  depends_on "openssl@4"
 
   def install
     # Workaround to build with CMake 4
